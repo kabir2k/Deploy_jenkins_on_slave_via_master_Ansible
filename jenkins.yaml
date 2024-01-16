@@ -1,0 +1,57 @@
+---
+- hosts: jenkins
+  remote_user: ubuntu
+  become: yes
+  vars:
+    ports: 9090
+  tasks:
+    - name: Add repository jenkins
+      apt:
+        name: "*"
+        state: latest
+
+    - name: Download jenkins key
+      ansible.builtin.get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+
+    - name: Add jenkins repo
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+        filename: jenkins.list
+
+    - name: Update all packages to their latest version
+      apt:
+        name: "*"
+        state: latest
+
+    - name: Install fontconfig
+      apt:
+        name: fontconfig
+        state: present
+
+    - name: Install java
+      apt:
+        name: openjdk-17-jre
+        state: present
+
+    - name: Install Jenkins
+      ansible.builtin.apt:
+        name: jenkins
+        state: present
+
+    - name: Ensure SELinux is set to enforcing mode
+      ansible.builtin.lineinfile:
+        path: /etc/default/jenkins
+        regexp: '^HTTP_PORT='
+        line: 'HTTP_PORT={{ ports }}'
+      notify: restart jenkins
+
+  handlers:
+    - name: restart jenkins
+      service:
+        name: jenkins
+        state: restarted
+        enabled: yes
+
