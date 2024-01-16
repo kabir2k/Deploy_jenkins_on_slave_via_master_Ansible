@@ -1,0 +1,1 @@
+# Deploy_jenkins_on_slave_via_master_Ansible
